@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import hmac
 import json
+import logging
 import time
 from pathlib import Path
 from typing import List
@@ -12,6 +13,9 @@ from typing import List
 import requests
 
 from config import SETTINGS
+
+
+logger = logging.getLogger(__name__)
 
 
 def _gate_headers(method: str, path: str, query_string: str = "", body: str = "") -> dict[str, str]:
@@ -64,8 +68,14 @@ def _load_watchlist() -> List[str]:
 
 
 def get_my_coins() -> List[str]:
-    api_tokens = _fetch_spot_balances()
     watchlist_tokens = _load_watchlist()
+
+    try:
+        api_tokens = _fetch_spot_balances()
+    except requests.RequestException as exc:
+        logger.warning("Failed to fetch Gate spot balances, fallback to watchlist only: %s", exc)
+        api_tokens = []
+
     return sorted(set(api_tokens) | set(watchlist_tokens))
 
 
