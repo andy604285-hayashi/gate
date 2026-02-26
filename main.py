@@ -18,21 +18,24 @@ def run_once() -> None:
         return
 
     my_coins = get_my_coins()
-    processed_ids: list[str] = []
 
     for ann in announcements:
-        delist_coins = parse_delist_coins(ann)
-        danger_coins = match_coins(delist_coins, my_coins)
-        message = build_alert_message(ann, delist_coins, danger_coins)
+        try:
+            delist_coins = parse_delist_coins(ann)
+            danger_coins = match_coins(delist_coins, my_coins)
+            message = build_alert_message(ann, delist_coins, danger_coins)
 
-        if send_telegram_message(message):
-            print(f"[ALERT SENT] {ann.title}")
-        else:
-            print(f"[ALERT GENERATED] {ann.title}\n{message}")
+            if send_telegram_message(message):
+                print(f"[ALERT SENT] {ann.title}")
+            else:
+                print(f"[ALERT GENERATED] {ann.title}\n{message}")
 
-        processed_ids.append(ann.id)
-
-    save_processed_ids(processed_ids)
+            # Persist each successfully handled announcement immediately,
+            # so a later failure in the same polling batch won't cause
+            # duplicate alerts for already-processed items.
+            save_processed_ids([ann.id])
+        except Exception as exc:
+            print(f"[ANNOUNCEMENT ERROR] {ann.title}: {exc}")
 
 
 def main() -> None:
