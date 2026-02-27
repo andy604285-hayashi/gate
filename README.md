@@ -32,3 +32,9 @@
 - 默认每 120 秒扫描一次（可用 `POLL_INTERVAL_SECONDS` 调整）。
 - 若 Gate 页面结构变化，需要更新 `scanner.py` 选择器。
 - 建议先用 `watchlist.json` 验证流程，再接入 API Key。
+
+
+## 阶段推进记录
+
+- 阶段1（数据源调研）报告：`docs/PHASE_1_RESEARCH.md`
+- 调研探测脚本：`python tools/source_probe.py`
