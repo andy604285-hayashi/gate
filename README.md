@@ -38,3 +38,5 @@
 
 - 阶段1（数据源调研）报告：`docs/PHASE_1_RESEARCH.md`
 - 调研探测脚本：`python tools/source_probe.py`
+
+- 阶段2（扫描模块实现）记录：`docs/PHASE_2_SCANNER.md`
