@@ -40,3 +40,5 @@
 - 调研探测脚本：`python tools/source_probe.py`
 
 - 阶段2（扫描模块实现）记录：`docs/PHASE_2_SCANNER.md`
+
+- 阶段3（解析模块实现）记录：`docs/PHASE_3_PARSER.md`
