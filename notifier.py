@@ -25,6 +25,17 @@ from scanner import Announcement
 
 logger = logging.getLogger(__name__)
 
+TELEGRAM_TEXT_LIMIT = 4096
+
+
+def _fit_telegram_text(text: str, limit: int = TELEGRAM_TEXT_LIMIT) -> str:
+    if len(text) <= limit:
+        return text
+    suffix = "\n\n...[truncated]"
+    trimmed = text[: max(0, limit - len(suffix))]
+    logger.warning("Telegram message exceeded %d chars; truncating", limit)
+    return trimmed + suffix
+
 
 def build_alert_message(
     ann: Announcement,
@@ -72,10 +83,11 @@ def send_telegram_message(text: str, retries: int = 2, backoff_seconds: float = 
     Returns True if any attempt succeeds, else False.
     """
     total_attempts = max(1, retries + 1)
+    final_text = _fit_telegram_text(text)
 
     for attempt in range(1, total_attempts + 1):
         try:
-            ok = _telegram_send_once(text)
+            ok = _telegram_send_once(final_text)
             if ok:
                 logger.info("Telegram send succeeded on attempt %d/%d", attempt, total_attempts)
                 return True
