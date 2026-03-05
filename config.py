@@ -1,7 +1,4 @@
-"""Configuration for Gate.io delist monitor.
-
-Copy this file and fill credentials before production use.
-"""
+"""Configuration for Gate.io delist monitor."""
 
 from __future__ import annotations
 
@@ -21,7 +18,6 @@ class Settings:
     telegram_bot_token: str = os.getenv("TG_BOT_TOKEN", "")
     telegram_chat_id: str = os.getenv("TG_CHAT_ID", "")
 
-    # Keyword matching for announcement title pre-filtering.
     delist_keywords: List[str] = None  # type: ignore[assignment]
 
     history_file: str = os.getenv("HISTORY_FILE", "history.json")
@@ -29,11 +25,26 @@ class Settings:
 
     def __post_init__(self) -> None:
         if self.delist_keywords is None:
-            object.__setattr__(
-                self,
-                "delist_keywords",
-                ["delist", "remove", "下架", "移除"],
-            )
+            object.__setattr__(self, "delist_keywords", ["delist", "remove", "下架", "移除"])
+
+    def validation_warnings(self) -> List[str]:
+        """Non-fatal configuration warnings for startup diagnostics."""
+        warnings: List[str] = []
+
+        if self.poll_interval_seconds <= 0:
+            warnings.append("POLL_INTERVAL_SECONDS should be > 0.")
+
+        # Pairs of secrets should be configured together.
+        if bool(self.gate_api_key) ^ bool(self.gate_api_secret):
+            warnings.append("GATE_API_KEY and GATE_API_SECRET should be set together.")
+
+        if bool(self.telegram_bot_token) ^ bool(self.telegram_chat_id):
+            warnings.append("TG_BOT_TOKEN and TG_CHAT_ID should be set together.")
+
+        if not self.telegram_bot_token or not self.telegram_chat_id:
+            warnings.append("Telegram not fully configured; alerts will fall back to console logging.")
+
+        return warnings
 
 
 SETTINGS = Settings()

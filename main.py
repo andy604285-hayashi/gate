@@ -93,6 +93,9 @@ def main() -> None:
     args = build_arg_parser().parse_args()
     setup_logging(args.log_level)
 
+    for warning in SETTINGS.validation_warnings():
+        logger.warning("CONFIG WARNING: %s", warning)
+
     if args.once:
         run_once()
         return
