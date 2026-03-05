@@ -42,3 +42,5 @@
 - 阶段2（扫描模块实现）记录：`docs/PHASE_2_SCANNER.md`
 
 - 阶段3（解析模块实现）记录：`docs/PHASE_3_PARSER.md`
+
+- 阶段4（持仓匹配实现）记录：`docs/PHASE_4_MATCHER.md`

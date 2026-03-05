@@ -1,4 +1,4 @@
-"""Portfolio/watchlist matching module."""
+"""Portfolio/watchlist matching module (Phase 4)."""
 
 from __future__ import annotations
 
@@ -10,12 +10,26 @@ import time
 from pathlib import Path
 from typing import List
 
-import requests
+try:
+    import requests
+except ModuleNotFoundError:  # allow offline/unit environments without deps
+    class _RequestsFallback:
+        class RequestException(Exception):
+            pass
+
+        @staticmethod
+        def get(*_args, **_kwargs):
+            raise _RequestsFallback.RequestException("requests is not installed")
+
+    requests = _RequestsFallback()  # type: ignore[assignment]
 
 from config import SETTINGS
 
-
 logger = logging.getLogger(__name__)
+
+
+class GateAuthConfigError(ValueError):
+    """Raised when Gate credentials are incomplete."""
 
 
 def _gate_headers(method: str, path: str, query_string: str = "", body: str = "") -> dict[str, str]:
@@ -31,8 +45,14 @@ def _gate_headers(method: str, path: str, query_string: str = "", body: str = ""
 
 
 def _fetch_spot_balances() -> List[str]:
-    if not SETTINGS.gate_api_key or not SETTINGS.gate_api_secret:
+    key = SETTINGS.gate_api_key
+    secret = SETTINGS.gate_api_secret
+
+    if not key and not secret:
+        logger.info("Gate API credentials not configured; skip API balance fetch")
         return []
+    if not key or not secret:
+        raise GateAuthConfigError("Both GATE_API_KEY and GATE_API_SECRET must be set together")
 
     path = "/spot/accounts"
     url = f"{SETTINGS.gate_api_base}{path}"
@@ -45,25 +65,38 @@ def _fetch_spot_balances() -> List[str]:
     tokens = []
     for row in data:
         currency = row.get("currency", "").upper()
-        available = float(row.get("available", 0) or 0)
-        locked = float(row.get("locked", 0) or 0)
+        try:
+            available = float(row.get("available", 0) or 0)
+            locked = float(row.get("locked", 0) or 0)
+        except (TypeError, ValueError):
+            logger.debug("Skip malformed balance row: %s", row)
+            continue
         if currency and (available > 0 or locked > 0):
             tokens.append(currency)
-    return sorted(set(tokens))
+
+    normalized = sorted(set(tokens))
+    logger.info("Fetched %d symbols from Gate spot balances", len(normalized))
+    return normalized
 
 
 def _load_watchlist() -> List[str]:
     file = Path(SETTINGS.watchlist_file)
     if not file.exists():
+        logger.info("Watchlist file not found: %s", SETTINGS.watchlist_file)
         return []
 
     try:
         content = json.loads(file.read_text(encoding="utf-8"))
     except json.JSONDecodeError:
+        logger.warning("Watchlist JSON is invalid: %s", SETTINGS.watchlist_file)
         return []
 
     if isinstance(content, list):
-        return sorted({str(c).upper() for c in content})
+        tokens = sorted({str(c).upper() for c in content if str(c).strip()})
+        logger.info("Loaded %d symbols from watchlist", len(tokens))
+        return tokens
+
+    logger.warning("Watchlist JSON must be a list: %s", SETTINGS.watchlist_file)
     return []
 
 
@@ -72,11 +105,21 @@ def get_my_coins() -> List[str]:
 
     try:
         api_tokens = _fetch_spot_balances()
+    except GateAuthConfigError as exc:
+        logger.warning("Gate credential configuration issue, fallback to watchlist only: %s", exc)
+        api_tokens = []
     except requests.RequestException as exc:
         logger.warning("Failed to fetch Gate spot balances, fallback to watchlist only: %s", exc)
         api_tokens = []
 
-    return sorted(set(api_tokens) | set(watchlist_tokens))
+    merged = sorted(set(api_tokens) | set(watchlist_tokens))
+    logger.info(
+        "Portfolio source summary: api=%d watchlist=%d merged=%d",
+        len(api_tokens),
+        len(watchlist_tokens),
+        len(merged),
+    )
+    return merged
 
 
 def match_coins(delist_coins: List[str], my_coins: List[str]) -> List[str]:
