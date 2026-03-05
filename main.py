@@ -1,4 +1,4 @@
-"""Main entry point for Gate.io delist monitor (Phase 6)."""
+"""Main entry point for Gate.io delist monitor (Phase 6+)."""
 
 from __future__ import annotations
 
@@ -21,8 +21,6 @@ def setup_logging(level: str = "INFO") -> None:
         level=getattr(logging, level.upper(), logging.INFO),
         format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
     )
-
-
 
 
 def _status_payload() -> dict:
@@ -50,7 +48,7 @@ def print_status(json_output: bool = False) -> None:
         logger.info("- %s=%s", key, value)
 
 
-def run_once() -> int:
+def run_once(dry_run: bool = False) -> int:
     """Run one polling cycle.
 
     Returns the number of newly processed announcements.
@@ -69,6 +67,12 @@ def run_once() -> int:
             danger_coins = match_coins(delist_coins, my_coins)
             message = build_alert_message(ann, delist_coins, danger_coins)
 
+            if dry_run:
+                logger.info("DRY RUN: alert generated but not sent/saved: %s", ann.title)
+                logger.debug("DRY RUN alert message:\n%s", message)
+                processed_count += 1
+                continue
+
             if send_telegram_message(message):
                 logger.info("ALERT SENT: %s", ann.title)
             else:
@@ -81,16 +85,21 @@ def run_once() -> int:
         except Exception as exc:  # keep batch resilient per-announcement
             logger.exception("ANNOUNCEMENT ERROR: %s (%s)", ann.title, exc)
 
-    logger.info("Cycle complete: processed=%d total_candidates=%d", processed_count, len(announcements))
+    logger.info(
+        "Cycle complete: processed=%d total_candidates=%d dry_run=%s",
+        processed_count,
+        len(announcements),
+        dry_run,
+    )
     return processed_count
 
 
-def run_loop(max_cycles: int | None = None) -> None:
-    logger.info("Gate.io 下架监控已启动 (interval=%ss)", SETTINGS.poll_interval_seconds)
+def run_loop(max_cycles: int | None = None, dry_run: bool = False) -> None:
+    logger.info("Gate.io 下架监控已启动 (interval=%ss dry_run=%s)", SETTINGS.poll_interval_seconds, dry_run)
     cycles = 0
     while True:
         try:
-            run_once()
+            run_once(dry_run=dry_run)
         except Exception as exc:  # broad guard for long-running monitor
             logger.exception("TOP-LEVEL LOOP ERROR: %s", exc)
 
@@ -134,6 +143,11 @@ def build_arg_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="When used with --status, emit JSON output",
     )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Run pipeline without sending notifications or writing history",
+    )
     return parser
 
 
@@ -154,10 +168,10 @@ def main() -> None:
         return
 
     if args.once:
-        run_once()
+        run_once(dry_run=args.dry_run)
         return
 
-    run_loop()
+    run_loop(dry_run=args.dry_run)
 
 
 if __name__ == "__main__":

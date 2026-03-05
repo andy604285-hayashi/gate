@@ -29,6 +29,21 @@ class MainCoreTests(unittest.TestCase):
         self.assertEqual(out, 2)
         self.assertEqual(save_mock.call_count, 2)
 
+    def test_run_once_dry_run_skips_send_and_history(self) -> None:
+        anns = [Announcement(id="1", title="t1", url="u1", date="")]
+        with patch("main.get_new_announcements", return_value=anns), \
+            patch("main.get_my_coins", return_value=["ABC"]), \
+            patch("main.parse_delist_coins", return_value=["ABC"]), \
+            patch("main.match_coins", return_value=["ABC"]), \
+            patch("main.build_alert_message", return_value="msg"), \
+            patch("main.send_telegram_message") as send_mock, \
+            patch("main.save_processed_ids") as save_mock:
+            out = main.run_once(dry_run=True)
+
+        self.assertEqual(out, 1)
+        send_mock.assert_not_called()
+        save_mock.assert_not_called()
+
     def test_run_once_continues_when_one_announcement_fails(self) -> None:
         anns = [
             Announcement(id="1", title="bad", url="u1", date=""),
@@ -70,6 +85,11 @@ class MainCoreTests(unittest.TestCase):
         self.assertTrue(args.status)
         self.assertTrue(args.status_json)
 
+    def test_arg_parser_supports_dry_run(self) -> None:
+        args = main.build_arg_parser().parse_args(["--once", "--dry-run"])
+        self.assertTrue(args.once)
+        self.assertTrue(args.dry_run)
+
     def test_status_mode_exits_without_run_loop(self) -> None:
         ns = Namespace(
             once=False,
@@ -78,6 +98,7 @@ class MainCoreTests(unittest.TestCase):
             preflight_json=False,
             status=True,
             status_json=False,
+            dry_run=False,
         )
         with patch("main.build_arg_parser") as parser_mock, \
             patch("main.setup_logging"), \
