@@ -230,6 +230,9 @@ def main() -> None:
     if args.status_json:
         logger.warning("--status-json is ignored unless --status is set")
 
+    if args.preflight_json:
+        logger.warning("--preflight-json is ignored unless --preflight is set")
+
     run_loop(max_cycles=(args.max_cycles or None), dry_run=args.dry_run)
 
 

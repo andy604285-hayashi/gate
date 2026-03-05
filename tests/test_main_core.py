@@ -222,6 +222,29 @@ class MainCoreTests(unittest.TestCase):
 
         warn_mock.assert_any_call("--once-json is ignored unless --once is set")
 
+    def test_main_warns_preflight_json_without_preflight(self) -> None:
+        ns = Namespace(
+            once=False,
+            log_level="INFO",
+            preflight=False,
+            preflight_json=True,
+            status=False,
+            status_json=False,
+            dry_run=False,
+            once_json=False,
+            max_cycles=1,
+        )
+        with (
+            patch("main.build_arg_parser") as parser_mock,
+            patch("main.setup_logging"),
+            patch("main.logger.warning") as warn_mock,
+            patch("main.run_loop"),
+        ):
+            parser_mock.return_value.parse_args.return_value = ns
+            main.main()
+
+        warn_mock.assert_any_call("--preflight-json is ignored unless --preflight is set")
+
     def test_main_warns_status_json_without_status(self) -> None:
         ns = Namespace(
             once=False,
