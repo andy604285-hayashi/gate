@@ -58,3 +58,9 @@
 - systemd 服务模板：`deploy/gate-delist-monitor.service`
 - crontab 示例：`deploy/crontab.example`
 - 单轮执行脚本：`scripts/run_once.sh`
+
+
+## 上线前检查
+
+- 运行预检查：`python tools/preflight_check.py`
+- 环境变量模板：`.env.example`

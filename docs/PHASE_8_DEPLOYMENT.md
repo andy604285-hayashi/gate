@@ -48,3 +48,9 @@
 
 - 先执行一次：`python main.py --once --log-level DEBUG`
 - 再观察 24 小时日志中的重启次数与告警行为
+
+
+## 预检查工具
+
+- 执行：`python tools/preflight_check.py`
+- 用途：检查关键文件存在性、history 可写性、TG/API 环境变量是否配置。
