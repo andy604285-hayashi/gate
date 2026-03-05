@@ -36,12 +36,8 @@ def check_writable_paths() -> List[Tuple[str, bool, str]]:
         p = Path(name)
         try:
             p.parent.mkdir(parents=True, exist_ok=True)
-            if p.exists():
-                with p.open("a", encoding="utf-8"):
-                    pass
-            else:
-                init_content = "{}" if name == SETTINGS.heartbeat_file else "[]"
-                p.write_text(init_content, encoding="utf-8")
+            with p.open("a", encoding="utf-8"):
+                pass
             results.append((name, True, "writable"))
         except Exception as exc:
             results.append((name, False, f"not writable: {exc}"))

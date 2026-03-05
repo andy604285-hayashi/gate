@@ -70,6 +70,25 @@ class PreflightCheckTests(unittest.TestCase):
             self.assertTrue(row_map[str(heartbeat)][0])
             self.assertTrue(heartbeat.exists())
 
+
+    def test_check_writable_paths_does_not_overwrite_existing_history(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            history = Path(tmp) / "history.json"
+            history.write_text('["already"]', encoding="utf-8")
+
+            old_history = SETTINGS.history_file
+            old_heartbeat = SETTINGS.heartbeat_file
+            try:
+                object.__setattr__(SETTINGS, "history_file", str(history))
+                object.__setattr__(SETTINGS, "heartbeat_file", "")
+                rows = preflight_check.check_writable_paths()
+            finally:
+                object.__setattr__(SETTINGS, "history_file", old_history)
+                object.__setattr__(SETTINGS, "heartbeat_file", old_heartbeat)
+
+            self.assertTrue(any(key == str(history) and ok for key, ok, _ in rows))
+            self.assertEqual(history.read_text(encoding="utf-8"), '["already"]')
+
     def test_run_preflight_json_output(self) -> None:
         from io import StringIO
         import contextlib
