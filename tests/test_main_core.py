@@ -65,8 +65,20 @@ class MainCoreTests(unittest.TestCase):
         args = main.build_arg_parser().parse_args(["--status"])
         self.assertTrue(args.status)
 
+    def test_arg_parser_supports_status_json(self) -> None:
+        args = main.build_arg_parser().parse_args(["--status", "--status-json"])
+        self.assertTrue(args.status)
+        self.assertTrue(args.status_json)
+
     def test_status_mode_exits_without_run_loop(self) -> None:
-        ns = Namespace(once=False, log_level="INFO", preflight=False, preflight_json=False, status=True)
+        ns = Namespace(
+            once=False,
+            log_level="INFO",
+            preflight=False,
+            preflight_json=False,
+            status=True,
+            status_json=False,
+        )
         with patch("main.build_arg_parser") as parser_mock, \
             patch("main.setup_logging"), \
             patch("main.print_status") as status_mock, \
@@ -75,7 +87,7 @@ class MainCoreTests(unittest.TestCase):
             parser_mock.return_value.parse_args.return_value = ns
             main.main()
 
-        status_mock.assert_called_once()
+        status_mock.assert_called_once_with(json_output=False)
         run_loop_mock.assert_not_called()
         run_once_mock.assert_not_called()
 

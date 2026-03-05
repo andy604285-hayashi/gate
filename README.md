@@ -22,7 +22,7 @@
 2. 配置环境变量：
    - `GATE_API_KEY` / `GATE_API_SECRET`（可选，不填则仅使用 `watchlist.json`）
    - `TG_BOT_TOKEN` / `TG_CHAT_ID`（可选，不填则只在控制台输出）
-  - `GATE_ANNOUNCEMENT_API_URL` / `GATE_ANNOUNCEMENT_RSS_URL`（可选，启用 API/RSS 扫描源）
+   - `GATE_ANNOUNCEMENT_API_URL` / `GATE_ANNOUNCEMENT_RSS_URL`（可选，启用 API/RSS 扫描源）
 3. 运行：
    ```bash
    python main.py
@@ -72,3 +72,5 @@
 - JSON 预检查（自动化场景）：`python main.py --preflight --preflight-json`
 
 - 运行状态概览：`python main.py --status`
+
+- JSON 状态概览：`python main.py --status --status-json`

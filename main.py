@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import logging
 import time
 
@@ -24,17 +25,30 @@ def setup_logging(level: str = "INFO") -> None:
 
 
 
-def print_status() -> None:
+def _status_payload() -> dict:
+    return {
+        "poll_interval_seconds": SETTINGS.poll_interval_seconds,
+        "history_file": SETTINGS.history_file,
+        "watchlist_file": SETTINGS.watchlist_file,
+        "announcement_web": SETTINGS.announcements_url,
+        "announcement_api_configured": bool(SETTINGS.announcement_api_url),
+        "announcement_rss_configured": bool(SETTINGS.announcement_rss_url),
+        "gate_api_configured": bool(SETTINGS.gate_api_key and SETTINGS.gate_api_secret),
+        "telegram_configured": bool(SETTINGS.telegram_bot_token and SETTINGS.telegram_chat_id),
+    }
+
+
+def print_status(json_output: bool = False) -> None:
     """Print non-secret runtime status for quick diagnostics."""
+    payload = _status_payload()
+    if json_output:
+        print(json.dumps(payload, ensure_ascii=False, indent=2))
+        return
+
     logger.info("Runtime status summary:")
-    logger.info("- poll_interval_seconds=%s", SETTINGS.poll_interval_seconds)
-    logger.info("- history_file=%s", SETTINGS.history_file)
-    logger.info("- watchlist_file=%s", SETTINGS.watchlist_file)
-    logger.info("- announcement_web=%s", SETTINGS.announcements_url)
-    logger.info("- announcement_api_configured=%s", bool(SETTINGS.announcement_api_url))
-    logger.info("- announcement_rss_configured=%s", bool(SETTINGS.announcement_rss_url))
-    logger.info("- gate_api_configured=%s", bool(SETTINGS.gate_api_key and SETTINGS.gate_api_secret))
-    logger.info("- telegram_configured=%s", bool(SETTINGS.telegram_bot_token and SETTINGS.telegram_chat_id))
+    for key, value in payload.items():
+        logger.info("- %s=%s", key, value)
+
 
 def run_once() -> int:
     """Run one polling cycle.
@@ -115,6 +129,11 @@ def build_arg_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Print runtime status summary and exit",
     )
+    parser.add_argument(
+        "--status-json",
+        action="store_true",
+        help="When used with --status, emit JSON output",
+    )
     return parser
 
 
@@ -131,7 +150,7 @@ def main() -> None:
         raise SystemExit(run_preflight(json_output=args.preflight_json))
 
     if args.status:
-        print_status()
+        print_status(json_output=args.status_json)
         return
 
     if args.once:
