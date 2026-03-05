@@ -148,6 +148,11 @@ def build_arg_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Run pipeline without sending notifications or writing history",
     )
+    parser.add_argument(
+        "--once-json",
+        action="store_true",
+        help="When used with --once, emit JSON summary",
+    )
     return parser
 
 
@@ -168,7 +173,9 @@ def main() -> None:
         return
 
     if args.once:
-        run_once(dry_run=args.dry_run)
+        processed = run_once(dry_run=args.dry_run)
+        if args.once_json:
+            print(json.dumps({"processed": processed, "dry_run": bool(args.dry_run)}, ensure_ascii=False))
         return
 
     run_loop(dry_run=args.dry_run)

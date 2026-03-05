@@ -90,6 +90,11 @@ class MainCoreTests(unittest.TestCase):
         self.assertTrue(args.once)
         self.assertTrue(args.dry_run)
 
+    def test_arg_parser_supports_once_json(self) -> None:
+        args = main.build_arg_parser().parse_args(["--once", "--once-json"])
+        self.assertTrue(args.once)
+        self.assertTrue(args.once_json)
+
     def test_status_mode_exits_without_run_loop(self) -> None:
         ns = Namespace(
             once=False,
@@ -99,6 +104,7 @@ class MainCoreTests(unittest.TestCase):
             status=True,
             status_json=False,
             dry_run=False,
+            once_json=False,
         )
         with patch("main.build_arg_parser") as parser_mock, \
             patch("main.setup_logging"), \

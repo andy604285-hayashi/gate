@@ -76,3 +76,5 @@
 - JSON 状态概览：`python main.py --status --status-json`
 
 - 全链路演练（不发通知、不写历史）：`python main.py --once --dry-run`
+
+- 单轮 JSON 结果：`python main.py --once --once-json`
