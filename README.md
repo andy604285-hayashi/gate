@@ -46,3 +46,5 @@
 - 阶段4（持仓匹配实现）记录：`docs/PHASE_4_MATCHER.md`
 
 - 阶段5（通知模块实现）记录：`docs/PHASE_5_NOTIFIER.md`
+
+- 阶段6（主程序整合）记录：`docs/PHASE_6_MAIN.md`
