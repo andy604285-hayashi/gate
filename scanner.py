@@ -192,19 +192,26 @@ def _fetch_from_rss() -> List[Announcement]:
 
 
 def scan_announcements() -> List[Announcement]:
-    """Try multiple sources in priority order and return latest scan result."""
+    """Aggregate announcements from all sources in priority order."""
     fetchers = [_fetch_from_api, _fetch_from_web, _fetch_from_rss]
     errors: list[str] = []
+    merged: List[Announcement] = []
 
     for fetcher in fetchers:
+        source_name = getattr(fetcher, "__name__", fetcher.__class__.__name__)
         try:
             items = fetcher()
             if items:
-                logger.info("Scanner source=%s found %d delist announcements", fetcher.__name__, len(items))
-                return items
+                logger.info("Scanner source=%s found %d delist announcements", source_name, len(items))
+                merged.extend(items)
         except Exception as exc:
-            errors.append(f"{fetcher.__name__}: {exc}")
+            errors.append(f"{source_name}: {exc}")
             logger.warning("Scanner source failed: %s", errors[-1])
+
+    deduped = _dedupe(merged)
+    if deduped:
+        logger.info("Scanner merged %d announcements from %d sources", len(deduped), len(fetchers))
+        return deduped
 
     if errors:
         logger.error("All scanner sources failed or yielded empty results: %s", " | ".join(errors))
