@@ -37,9 +37,11 @@ def _load_history(path: str) -> set[str]:
 
 def save_processed_ids(ids: Iterable[str], path: str | None = None) -> None:
     history_path = path or SETTINGS.history_file
+    history_file = Path(history_path)
     existing = _load_history(history_path)
     existing.update(ids)
-    Path(history_path).write_text(
+    history_file.parent.mkdir(parents=True, exist_ok=True)
+    history_file.write_text(
         json.dumps(sorted(existing), ensure_ascii=False, indent=2),
         encoding="utf-8",
     )

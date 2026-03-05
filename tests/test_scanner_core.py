@@ -1,6 +1,9 @@
+import json
+import tempfile
 import unittest
+from pathlib import Path
 
-from scanner import Announcement, _dedupe, _extract_announcement_id, _is_delist_title
+from scanner import Announcement, _dedupe, _extract_announcement_id, _is_delist_title, save_processed_ids
 
 
 class ScannerCoreTests(unittest.TestCase):
@@ -17,6 +20,17 @@ class ScannerCoreTests(unittest.TestCase):
             "关于下架 ABC/USDT 的公告",
         )
         self.assertTrue(value)
+
+
+
+    def test_save_processed_ids_creates_parent_directory(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            history_path = Path(tmp) / "nested" / "history.json"
+            save_processed_ids(["b", "a"], path=str(history_path))
+
+            self.assertTrue(history_path.exists())
+            payload = json.loads(history_path.read_text(encoding="utf-8"))
+            self.assertEqual(payload, ["a", "b"])
 
     def test_is_delist_title_supports_cn_en(self) -> None:
         self.assertTrue(_is_delist_title("About Delist ABC"))
