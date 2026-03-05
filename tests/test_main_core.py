@@ -1,4 +1,5 @@
 import unittest
+from argparse import Namespace
 from unittest.mock import patch
 
 import main
@@ -59,6 +60,24 @@ class MainCoreTests(unittest.TestCase):
         args = main.build_arg_parser().parse_args(["--preflight", "--preflight-json"])
         self.assertTrue(args.preflight)
         self.assertTrue(args.preflight_json)
+
+    def test_arg_parser_supports_status(self) -> None:
+        args = main.build_arg_parser().parse_args(["--status"])
+        self.assertTrue(args.status)
+
+    def test_status_mode_exits_without_run_loop(self) -> None:
+        ns = Namespace(once=False, log_level="INFO", preflight=False, preflight_json=False, status=True)
+        with patch("main.build_arg_parser") as parser_mock, \
+            patch("main.setup_logging"), \
+            patch("main.print_status") as status_mock, \
+            patch("main.run_loop") as run_loop_mock, \
+            patch("main.run_once") as run_once_mock:
+            parser_mock.return_value.parse_args.return_value = ns
+            main.main()
+
+        status_mock.assert_called_once()
+        run_loop_mock.assert_not_called()
+        run_once_mock.assert_not_called()
 
 
 if __name__ == "__main__":

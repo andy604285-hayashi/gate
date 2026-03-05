@@ -70,3 +70,5 @@
 - 环境变量模板：`.env.example`
 
 - JSON 预检查（自动化场景）：`python main.py --preflight --preflight-json`
+
+- 运行状态概览：`python main.py --status`
