@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import argparse
+import json
 import os
 import sys
 from pathlib import Path
@@ -52,28 +54,60 @@ def check_env_hints() -> List[Tuple[str, bool, str]]:
     return checks
 
 
-def run_preflight() -> int:
-    groups = [
-        ("Required files", check_required_files()),
-        ("Writable paths", check_writable_paths()),
-        ("Environment hints", check_env_hints()),
-    ]
+def collect_preflight_report() -> dict:
+    groups = {
+        "required_files": check_required_files(),
+        "writable_paths": check_writable_paths(),
+        "environment_hints": check_env_hints(),
+    }
 
-    has_hard_fail = False
-    for title, rows in groups:
-        print(f"\n[{title}]")
-        for key, ok, msg in rows:
-            mark = "OK" if ok else "WARN"
-            print(f"- {mark:4} {key}: {msg}")
-            if title in {"Required files", "Writable paths"} and not ok:
-                has_hard_fail = True
+    has_hard_fail = any(
+        (not ok)
+        for section in ("required_files", "writable_paths")
+        for _key, ok, _msg in groups[section]
+    )
 
-    if has_hard_fail:
-        print("\nPreflight result: FAIL")
-        return 1
-    print("\nPreflight result: PASS")
-    return 0
+    return {
+        "status": "FAIL" if has_hard_fail else "PASS",
+        "groups": {
+            name: [
+                {"key": key, "ok": ok, "message": message}
+                for key, ok, message in rows
+            ]
+            for name, rows in groups.items()
+        },
+    }
+
+
+def run_preflight(json_output: bool = False) -> int:
+    report = collect_preflight_report()
+
+    if json_output:
+        print(json.dumps(report, ensure_ascii=False, indent=2))
+        return 1 if report["status"] == "FAIL" else 0
+
+    title_map = {
+        "required_files": "Required files",
+        "writable_paths": "Writable paths",
+        "environment_hints": "Environment hints",
+    }
+
+    for section in ["required_files", "writable_paths", "environment_hints"]:
+        print(f"\n[{title_map[section]}]")
+        for item in report["groups"][section]:
+            mark = "OK" if item["ok"] else "WARN"
+            print(f"- {mark:4} {item['key']}: {item['message']}")
+
+    print(f"\nPreflight result: {report['status']}")
+    return 1 if report["status"] == "FAIL" else 0
+
+
+def build_arg_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description="Gate delist monitor preflight checker")
+    parser.add_argument("--json", action="store_true", help="Emit machine-readable JSON output")
+    return parser
 
 
 if __name__ == "__main__":
-    raise SystemExit(run_preflight())
+    args = build_arg_parser().parse_args()
+    raise SystemExit(run_preflight(json_output=args.json))

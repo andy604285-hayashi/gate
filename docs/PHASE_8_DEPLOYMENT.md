@@ -54,3 +54,5 @@
 
 - 执行：`python tools/preflight_check.py`
 - 用途：检查关键文件存在性、history 可写性、TG/API 环境变量是否配置。
+
+- JSON 预检查（自动化场景）：`python main.py --preflight --preflight-json`

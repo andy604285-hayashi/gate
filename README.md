@@ -67,3 +67,5 @@
 - 运行预检查：`python tools/preflight_check.py`
 - 或使用主程序入口：`python main.py --preflight`
 - 环境变量模板：`.env.example`
+
+- JSON 预检查（自动化场景）：`python main.py --preflight --preflight-json`

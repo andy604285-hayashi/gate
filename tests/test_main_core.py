@@ -55,6 +55,11 @@ class MainCoreTests(unittest.TestCase):
         args = main.build_arg_parser().parse_args(["--preflight"])
         self.assertTrue(args.preflight)
 
+    def test_arg_parser_supports_preflight_json(self) -> None:
+        args = main.build_arg_parser().parse_args(["--preflight", "--preflight-json"])
+        self.assertTrue(args.preflight)
+        self.assertTrue(args.preflight_json)
+
 
 if __name__ == "__main__":
     unittest.main()

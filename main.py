@@ -91,6 +91,11 @@ def build_arg_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Run deployment preflight checks and exit",
     )
+    parser.add_argument(
+        "--preflight-json",
+        action="store_true",
+        help="When used with --preflight, emit JSON output",
+    )
     return parser
 
 
@@ -104,7 +109,7 @@ def main() -> None:
     if args.preflight:
         from tools.preflight_check import run_preflight
 
-        raise SystemExit(run_preflight())
+        raise SystemExit(run_preflight(json_output=args.preflight_json))
 
     if args.once:
         run_once()

@@ -1,3 +1,4 @@
+import json
 import os
 import tempfile
 import unittest
@@ -42,6 +43,22 @@ class PreflightCheckTests(unittest.TestCase):
                 else:
                     os.environ[k] = v
 
+    def test_collect_preflight_report_shape(self) -> None:
+        report = preflight_check.collect_preflight_report()
+        self.assertIn("status", report)
+        self.assertIn("groups", report)
+        self.assertIn("required_files", report["groups"])
+
+    def test_run_preflight_json_output(self) -> None:
+        from io import StringIO
+        import contextlib
+
+        buf = StringIO()
+        with contextlib.redirect_stdout(buf):
+            code = preflight_check.run_preflight(json_output=True)
+        self.assertIn(code, (0, 1))
+        payload = json.loads(buf.getvalue())
+        self.assertIn("status", payload)
 
 if __name__ == "__main__":
     unittest.main()
