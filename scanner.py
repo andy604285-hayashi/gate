@@ -1,10 +1,12 @@
-"""Announcement scanner module (Phase 2)."""
+"""Announcement scanner module (Phase 2+)."""
 
 from __future__ import annotations
 
 import json
 import logging
 import re
+import urllib.request
+import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable, List
@@ -68,8 +70,6 @@ def _dedupe(items: List[Announcement]) -> List[Announcement]:
 
 def _fetch_from_web() -> List[Announcement]:
     """Scrape Gate announcement page for delist-related announcements."""
-    # Lazy imports so non-network/unit workflows can still import this module
-    # in constrained environments where dependencies are unavailable.
     import requests
     from bs4 import BeautifulSoup
 
@@ -107,24 +107,92 @@ def _fetch_from_web() -> List[Announcement]:
     return _dedupe(items)
 
 
-def _fetch_from_api() -> List[Announcement]:
-    """Reserved for future API integration (phase roadmap)."""
+def _pick_api_items(payload: object) -> list[dict]:
+    if isinstance(payload, list):
+        return [x for x in payload if isinstance(x, dict)]
+    if isinstance(payload, dict):
+        for key in ("data", "items", "list", "result"):
+            value = payload.get(key)
+            if isinstance(value, list):
+                return [x for x in value if isinstance(x, dict)]
     return []
+
+
+def _parse_api_announcements(payload: object) -> List[Announcement]:
+    rows = _pick_api_items(payload)
+    out: List[Announcement] = []
+
+    for row in rows:
+        title = str(row.get("title") or row.get("name") or "").strip()
+        if not title or not _is_delist_title(title):
+            continue
+
+        url = str(row.get("url") or row.get("link") or row.get("href") or "").strip()
+        if url and url.startswith("/"):
+            url = f"https://www.gate.io{url}"
+
+        if not url:
+            continue
+
+        date_text = str(
+            row.get("date")
+            or row.get("time")
+            or row.get("published_at")
+            or row.get("created_at")
+            or ""
+        )
+        out.append(Announcement(id=_extract_announcement_id(url, title), title=title, url=url, date=date_text))
+
+    return _dedupe(out)
+
+
+def _fetch_from_api() -> List[Announcement]:
+    """Fetch announcements from optional API source if configured."""
+    api_url = getattr(SETTINGS, "announcement_api_url", "")
+    if not api_url:
+        return []
+
+    req = urllib.request.Request(api_url, method="GET")
+    with urllib.request.urlopen(req, timeout=15) as resp:
+        charset = resp.headers.get_content_charset() or "utf-8"
+        payload = json.loads(resp.read().decode(charset, errors="replace"))
+    return _parse_api_announcements(payload)
+
+
+def _parse_rss_announcements(xml_text: str) -> List[Announcement]:
+    root = ET.fromstring(xml_text)
+    out: List[Announcement] = []
+
+    for item in root.findall(".//item"):
+        title = (item.findtext("title") or "").strip()
+        if not title or not _is_delist_title(title):
+            continue
+
+        url = (item.findtext("link") or "").strip()
+        if not url:
+            continue
+
+        date_text = (item.findtext("pubDate") or "").strip()
+        out.append(Announcement(id=_extract_announcement_id(url, title), title=title, url=url, date=date_text))
+
+    return _dedupe(out)
 
 
 def _fetch_from_rss() -> List[Announcement]:
-    """Reserved for future RSS integration (phase roadmap)."""
-    return []
+    """Fetch announcements from optional RSS source if configured."""
+    rss_url = getattr(SETTINGS, "announcement_rss_url", "")
+    if not rss_url:
+        return []
+
+    req = urllib.request.Request(rss_url, method="GET")
+    with urllib.request.urlopen(req, timeout=15) as resp:
+        charset = resp.headers.get_content_charset() or "utf-8"
+        xml_text = resp.read().decode(charset, errors="replace")
+    return _parse_rss_announcements(xml_text)
 
 
 def scan_announcements() -> List[Announcement]:
-    """Try multiple sources in priority order and return latest scan result.
-
-    Current phase strategy:
-    1) API (placeholder)
-    2) Web scraping (active)
-    3) RSS (placeholder)
-    """
+    """Try multiple sources in priority order and return latest scan result."""
     fetchers = [_fetch_from_api, _fetch_from_web, _fetch_from_rss]
     errors: list[str] = []
 
@@ -134,7 +202,7 @@ def scan_announcements() -> List[Announcement]:
             if items:
                 logger.info("Scanner source=%s found %d delist announcements", fetcher.__name__, len(items))
                 return items
-        except Exception as exc:  # keep scanner resilient; caller handles empty result
+        except Exception as exc:
             errors.append(f"{fetcher.__name__}: {exc}")
             logger.warning("Scanner source failed: %s", errors[-1])
 

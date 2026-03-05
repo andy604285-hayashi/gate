@@ -13,6 +13,8 @@ class Settings:
     gate_api_secret: str = os.getenv("GATE_API_SECRET", "")
     gate_api_base: str = os.getenv("GATE_API_BASE", "https://api.gateio.ws/api/v4")
     announcements_url: str = os.getenv("GATE_ANNOUNCEMENTS_URL", "https://www.gate.io/announcements")
+    announcement_api_url: str = os.getenv("GATE_ANNOUNCEMENT_API_URL", "")
+    announcement_rss_url: str = os.getenv("GATE_ANNOUNCEMENT_RSS_URL", "")
     poll_interval_seconds: int = int(os.getenv("POLL_INTERVAL_SECONDS", "120"))
 
     telegram_bot_token: str = os.getenv("TG_BOT_TOKEN", "")
