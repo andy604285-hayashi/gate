@@ -155,7 +155,11 @@ class MainCoreTests(unittest.TestCase):
             once_json=False,
             max_cycles=2,
         )
-        with patch("main.build_arg_parser") as parser_mock,             patch("main.setup_logging"),             patch("main.run_loop") as run_loop_mock:
+        with (
+            patch("main.build_arg_parser") as parser_mock,
+            patch("main.setup_logging"),
+            patch("main.run_loop") as run_loop_mock,
+        ):
             parser_mock.return_value.parse_args.return_value = ns
             main.main()
 
@@ -173,11 +177,39 @@ class MainCoreTests(unittest.TestCase):
             once_json=True,
             max_cycles=1,
         )
-        with patch("main.build_arg_parser") as parser_mock,             patch("main.setup_logging"),             patch("main.logger.warning") as warn_mock,             patch("main.run_loop"):
+        with (
+            patch("main.build_arg_parser") as parser_mock,
+            patch("main.setup_logging"),
+            patch("main.logger.warning") as warn_mock,
+            patch("main.run_loop"),
+        ):
             parser_mock.return_value.parse_args.return_value = ns
             main.main()
 
         warn_mock.assert_any_call("--once-json is ignored unless --once is set")
+
+    def test_main_warns_status_json_without_status(self) -> None:
+        ns = Namespace(
+            once=False,
+            log_level="INFO",
+            preflight=False,
+            preflight_json=False,
+            status=False,
+            status_json=True,
+            dry_run=False,
+            once_json=False,
+            max_cycles=1,
+        )
+        with (
+            patch("main.build_arg_parser") as parser_mock,
+            patch("main.setup_logging"),
+            patch("main.logger.warning") as warn_mock,
+            patch("main.run_loop"),
+        ):
+            parser_mock.return_value.parse_args.return_value = ns
+            main.main()
+
+        warn_mock.assert_any_call("--status-json is ignored unless --status is set")
 
 
 if __name__ == "__main__":

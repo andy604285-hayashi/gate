@@ -49,6 +49,27 @@ class PreflightCheckTests(unittest.TestCase):
         self.assertIn("groups", report)
         self.assertIn("required_files", report["groups"])
 
+    def test_check_writable_paths_includes_heartbeat_when_configured(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            history = Path(tmp) / "history.json"
+            heartbeat = Path(tmp) / "hb" / "heartbeat.json"
+
+            old_history = SETTINGS.history_file
+            old_heartbeat = SETTINGS.heartbeat_file
+            try:
+                object.__setattr__(SETTINGS, "history_file", str(history))
+                object.__setattr__(SETTINGS, "heartbeat_file", str(heartbeat))
+                rows = preflight_check.check_writable_paths()
+            finally:
+                object.__setattr__(SETTINGS, "history_file", old_history)
+                object.__setattr__(SETTINGS, "heartbeat_file", old_heartbeat)
+
+            row_map = {key: (ok, msg) for key, ok, msg in rows}
+            self.assertIn(str(history), row_map)
+            self.assertIn(str(heartbeat), row_map)
+            self.assertTrue(row_map[str(heartbeat)][0])
+            self.assertTrue(heartbeat.exists())
+
     def test_run_preflight_json_output(self) -> None:
         from io import StringIO
         import contextlib

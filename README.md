@@ -85,4 +85,4 @@
 
 - 有限轮询运行：`python main.py --max-cycles 3 --dry-run`
 
-- 参数说明：`--max-cycles` 必须是 >=0 的整数；`--once-json` 仅在 `--once` 时生效。
+- 参数说明：`--max-cycles` 必须是 >=0 的整数；`--once-json` 仅在 `--once` 时生效；`--status-json` 仅在 `--status` 时生效。
