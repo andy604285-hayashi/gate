@@ -64,7 +64,12 @@ def write_heartbeat(status: str, processed: int = 0, error: str = "") -> None:
         "processed": processed,
         "error": error,
     }
-    Path(SETTINGS.heartbeat_file).write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+    heartbeat_path = Path(SETTINGS.heartbeat_file)
+    try:
+        heartbeat_path.parent.mkdir(parents=True, exist_ok=True)
+        heartbeat_path.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+    except Exception as exc:
+        logger.warning("Failed to write heartbeat file %s: %s", heartbeat_path, exc)
 
 
 def run_once(dry_run: bool = False) -> int:

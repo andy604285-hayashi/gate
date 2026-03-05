@@ -1,5 +1,8 @@
+import json
+import tempfile
 import unittest
 from argparse import Namespace
+from pathlib import Path
 from unittest.mock import patch
 
 import main
@@ -7,6 +10,32 @@ from scanner import Announcement
 
 
 class MainCoreTests(unittest.TestCase):
+
+
+    def test_write_heartbeat_writes_json_file(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            heartbeat_file = Path(tmp) / "hb" / "heartbeat.json"
+            old_heartbeat = main.SETTINGS.heartbeat_file
+            try:
+                object.__setattr__(main.SETTINGS, "heartbeat_file", str(heartbeat_file))
+                main.write_heartbeat(status="ok", processed=3)
+            finally:
+                object.__setattr__(main.SETTINGS, "heartbeat_file", old_heartbeat)
+
+            payload = json.loads(heartbeat_file.read_text(encoding="utf-8"))
+            self.assertEqual(payload["status"], "ok")
+            self.assertEqual(payload["processed"], 3)
+
+    def test_write_heartbeat_logs_warning_on_write_failure(self) -> None:
+        old_heartbeat = main.SETTINGS.heartbeat_file
+        try:
+            object.__setattr__(main.SETTINGS, "heartbeat_file", "/proc/heartbeat.json")
+            with patch("main.logger.warning") as warn_mock:
+                main.write_heartbeat(status="ok", processed=1)
+        finally:
+            object.__setattr__(main.SETTINGS, "heartbeat_file", old_heartbeat)
+
+        warn_mock.assert_called_once()
     def test_run_once_no_announcements(self) -> None:
         with patch("main.get_new_announcements", return_value=[]), patch("main.write_heartbeat") as hb_mock:
             out = main.run_once()
