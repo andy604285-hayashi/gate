@@ -57,13 +57,20 @@ def run_once() -> int:
     return processed_count
 
 
-def run_loop() -> None:
+def run_loop(max_cycles: int | None = None) -> None:
     logger.info("Gate.io 下架监控已启动 (interval=%ss)", SETTINGS.poll_interval_seconds)
+    cycles = 0
     while True:
         try:
             run_once()
         except Exception as exc:  # broad guard for long-running monitor
             logger.exception("TOP-LEVEL LOOP ERROR: %s", exc)
+
+        cycles += 1
+        if max_cycles is not None and cycles >= max_cycles:
+            logger.info("Reached max cycles (%d), loop exits", max_cycles)
+            return
+
         time.sleep(SETTINGS.poll_interval_seconds)
 
 

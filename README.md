@@ -48,3 +48,5 @@
 - 阶段5（通知模块实现）记录：`docs/PHASE_5_NOTIFIER.md`
 
 - 阶段6（主程序整合）记录：`docs/PHASE_6_MAIN.md`
+
+- 阶段7（测试与调试）记录：`docs/PHASE_7_TESTING.md`
