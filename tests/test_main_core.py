@@ -102,6 +102,10 @@ class MainCoreTests(unittest.TestCase):
         self.assertTrue(args.once)
         self.assertTrue(args.once_json)
 
+    def test_arg_parser_supports_max_cycles(self) -> None:
+        args = main.build_arg_parser().parse_args(["--max-cycles", "3"])
+        self.assertEqual(args.max_cycles, 3)
+
     def test_status_mode_exits_without_run_loop(self) -> None:
         ns = Namespace(
             once=False,
@@ -112,6 +116,7 @@ class MainCoreTests(unittest.TestCase):
             status_json=False,
             dry_run=False,
             once_json=False,
+            max_cycles=0,
         )
         with patch("main.build_arg_parser") as parser_mock, \
             patch("main.setup_logging"), \
@@ -133,6 +138,24 @@ class MainCoreTests(unittest.TestCase):
 
         hb_mock.assert_called_once()
         self.assertEqual(hb_mock.call_args.kwargs["status"], "error")
+
+    def test_main_forwards_max_cycles_to_run_loop(self) -> None:
+        ns = Namespace(
+            once=False,
+            log_level="INFO",
+            preflight=False,
+            preflight_json=False,
+            status=False,
+            status_json=False,
+            dry_run=True,
+            once_json=False,
+            max_cycles=2,
+        )
+        with patch("main.build_arg_parser") as parser_mock,             patch("main.setup_logging"),             patch("main.run_loop") as run_loop_mock:
+            parser_mock.return_value.parse_args.return_value = ns
+            main.main()
+
+        run_loop_mock.assert_called_once_with(max_cycles=2, dry_run=True)
 
 
 if __name__ == "__main__":

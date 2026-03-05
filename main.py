@@ -175,6 +175,12 @@ def build_arg_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="When used with --once, emit JSON summary",
     )
+    parser.add_argument(
+        "--max-cycles",
+        type=int,
+        default=0,
+        help="Run at most N loop cycles (0 means infinite loop)",
+    )
     return parser
 
 
@@ -200,7 +206,7 @@ def main() -> None:
             print(json.dumps({"processed": processed, "dry_run": bool(args.dry_run)}, ensure_ascii=False))
         return
 
-    run_loop(dry_run=args.dry_run)
+    run_loop(max_cycles=(args.max_cycles or None), dry_run=args.dry_run)
 
 
 if __name__ == "__main__":

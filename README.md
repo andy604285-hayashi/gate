@@ -82,3 +82,5 @@
 - 单轮 JSON 结果：`python main.py --once --once-json`
 
 - 心跳文件示例：`HEARTBEAT_FILE=heartbeat.json`（每轮更新状态）。
+
+- 有限轮询运行：`python main.py --max-cycles 3 --dry-run`
