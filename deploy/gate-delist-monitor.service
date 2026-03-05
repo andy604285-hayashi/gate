@@ -1,0 +1,17 @@
+[Unit]
+Description=Gate.io Delist Monitor
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/gate_delist_monitor
+ExecStart=/opt/gate_delist_monitor/.venv/bin/python /opt/gate_delist_monitor/main.py --log-level INFO
+Restart=always
+RestartSec=5
+User=ubuntu
+Environment=PYTHONUNBUFFERED=1
+# Optional environment file for secrets
+EnvironmentFile=-/opt/gate_delist_monitor/.env
+
+[Install]
+WantedBy=multi-user.target

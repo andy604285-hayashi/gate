@@ -1,0 +1,2 @@
+# Run every 2 minutes (Phase-8 local deployment option)
+*/2 * * * * /bin/bash /opt/gate_delist_monitor/scripts/run_once.sh /opt/gate_delist_monitor >> /opt/gate_delist_monitor/monitor.log 2>&1

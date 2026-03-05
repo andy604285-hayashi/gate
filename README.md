@@ -50,3 +50,11 @@
 - 阶段6（主程序整合）记录：`docs/PHASE_6_MAIN.md`
 
 - 阶段7（测试与调试）记录：`docs/PHASE_7_TESTING.md`
+
+- 阶段8（部署与运行）记录：`docs/PHASE_8_DEPLOYMENT.md`
+
+## 部署资产
+
+- systemd 服务模板：`deploy/gate-delist-monitor.service`
+- crontab 示例：`deploy/crontab.example`
+- 单轮执行脚本：`scripts/run_once.sh`
