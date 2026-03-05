@@ -86,6 +86,11 @@ def build_arg_parser() -> argparse.ArgumentParser:
         default="INFO",
         help="Logging level: DEBUG/INFO/WARNING/ERROR",
     )
+    parser.add_argument(
+        "--preflight",
+        action="store_true",
+        help="Run deployment preflight checks and exit",
+    )
     return parser
 
 
@@ -95,6 +100,11 @@ def main() -> None:
 
     for warning in SETTINGS.validation_warnings():
         logger.warning("CONFIG WARNING: %s", warning)
+
+    if args.preflight:
+        from tools.preflight_check import run_preflight
+
+        raise SystemExit(run_preflight())
 
     if args.once:
         run_once()

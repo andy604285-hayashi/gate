@@ -51,6 +51,10 @@ class MainCoreTests(unittest.TestCase):
         self.assertEqual(out, 1)
         save_mock.assert_called_once_with(["2"])
 
+    def test_arg_parser_supports_preflight(self) -> None:
+        args = main.build_arg_parser().parse_args(["--preflight"])
+        self.assertTrue(args.preflight)
+
 
 if __name__ == "__main__":
     unittest.main()
