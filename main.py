@@ -133,6 +133,18 @@ def run_loop(max_cycles: int | None = None, dry_run: bool = False) -> None:
         time.sleep(SETTINGS.poll_interval_seconds)
 
 
+
+
+def _non_negative_int(value: str) -> int:
+    try:
+        parsed = int(value)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError("must be an integer") from exc
+    if parsed < 0:
+        raise argparse.ArgumentTypeError("must be >= 0")
+    return parsed
+
+
 def build_arg_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Gate.io delist monitor")
     parser.add_argument(
@@ -177,7 +189,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--max-cycles",
-        type=int,
+        type=_non_negative_int,
         default=0,
         help="Run at most N loop cycles (0 means infinite loop)",
     )
@@ -205,6 +217,9 @@ def main() -> None:
         if args.once_json:
             print(json.dumps({"processed": processed, "dry_run": bool(args.dry_run)}, ensure_ascii=False))
         return
+
+    if args.once_json:
+        logger.warning("--once-json is ignored unless --once is set")
 
     run_loop(max_cycles=(args.max_cycles or None), dry_run=args.dry_run)
 

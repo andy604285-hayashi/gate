@@ -106,6 +106,10 @@ class MainCoreTests(unittest.TestCase):
         args = main.build_arg_parser().parse_args(["--max-cycles", "3"])
         self.assertEqual(args.max_cycles, 3)
 
+    def test_arg_parser_rejects_negative_max_cycles(self) -> None:
+        with self.assertRaises(SystemExit):
+            main.build_arg_parser().parse_args(["--max-cycles", "-1"])
+
     def test_status_mode_exits_without_run_loop(self) -> None:
         ns = Namespace(
             once=False,
@@ -156,6 +160,24 @@ class MainCoreTests(unittest.TestCase):
             main.main()
 
         run_loop_mock.assert_called_once_with(max_cycles=2, dry_run=True)
+
+    def test_main_warns_once_json_without_once(self) -> None:
+        ns = Namespace(
+            once=False,
+            log_level="INFO",
+            preflight=False,
+            preflight_json=False,
+            status=False,
+            status_json=False,
+            dry_run=False,
+            once_json=True,
+            max_cycles=1,
+        )
+        with patch("main.build_arg_parser") as parser_mock,             patch("main.setup_logging"),             patch("main.logger.warning") as warn_mock,             patch("main.run_loop"):
+            parser_mock.return_value.parse_args.return_value = ns
+            main.main()
+
+        warn_mock.assert_any_call("--once-json is ignored unless --once is set")
 
 
 if __name__ == "__main__":
