@@ -6,6 +6,8 @@ import argparse
 import json
 import logging
 import time
+from datetime import datetime, timezone
+from pathlib import Path
 
 from config import SETTINGS
 from matcher import get_my_coins, match_coins
@@ -33,6 +35,7 @@ def _status_payload() -> dict:
         "announcement_rss_configured": bool(SETTINGS.announcement_rss_url),
         "gate_api_configured": bool(SETTINGS.gate_api_key and SETTINGS.gate_api_secret),
         "telegram_configured": bool(SETTINGS.telegram_bot_token and SETTINGS.telegram_chat_id),
+        "heartbeat_configured": bool(SETTINGS.heartbeat_file),
     }
 
 
@@ -48,6 +51,22 @@ def print_status(json_output: bool = False) -> None:
         logger.info("- %s=%s", key, value)
 
 
+
+
+def write_heartbeat(status: str, processed: int = 0, error: str = "") -> None:
+    """Write optional heartbeat JSON for external liveness checks."""
+    if not SETTINGS.heartbeat_file:
+        return
+
+    payload = {
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "status": status,
+        "processed": processed,
+        "error": error,
+    }
+    Path(SETTINGS.heartbeat_file).write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+
+
 def run_once(dry_run: bool = False) -> int:
     """Run one polling cycle.
 
@@ -56,6 +75,7 @@ def run_once(dry_run: bool = False) -> int:
     announcements = get_new_announcements()
     if not announcements:
         logger.info("No new delist announcements")
+        write_heartbeat(status="idle", processed=0)
         return 0
 
     my_coins = get_my_coins()
@@ -91,6 +111,7 @@ def run_once(dry_run: bool = False) -> int:
         len(announcements),
         dry_run,
     )
+    write_heartbeat(status="ok", processed=processed_count)
     return processed_count
 
 
@@ -102,6 +123,7 @@ def run_loop(max_cycles: int | None = None, dry_run: bool = False) -> None:
             run_once(dry_run=dry_run)
         except Exception as exc:  # broad guard for long-running monitor
             logger.exception("TOP-LEVEL LOOP ERROR: %s", exc)
+            write_heartbeat(status="error", processed=0, error=str(exc))
 
         cycles += 1
         if max_cycles is not None and cycles >= max_cycles:

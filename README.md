@@ -23,6 +23,7 @@
    - `GATE_API_KEY` / `GATE_API_SECRET`（可选，不填则仅使用 `watchlist.json`）
    - `TG_BOT_TOKEN` / `TG_CHAT_ID`（可选，不填则只在控制台输出）
    - `GATE_ANNOUNCEMENT_API_URL` / `GATE_ANNOUNCEMENT_RSS_URL`（可选，启用 API/RSS 扫描源）
+   - `HEARTBEAT_FILE`（可选，输出轮询心跳 JSON 文件）
 3. 运行：
    ```bash
    python main.py
@@ -79,3 +80,5 @@
 - 全链路演练（不发通知、不写历史）：`python main.py --once --dry-run`
 
 - 单轮 JSON 结果：`python main.py --once --once-json`
+
+- 心跳文件示例：`HEARTBEAT_FILE=heartbeat.json`（每轮更新状态）。

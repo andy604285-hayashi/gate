@@ -24,6 +24,7 @@ class Settings:
 
     history_file: str = os.getenv("HISTORY_FILE", "history.json")
     watchlist_file: str = os.getenv("WATCHLIST_FILE", "watchlist.json")
+    heartbeat_file: str = os.getenv("HEARTBEAT_FILE", "")
 
     def __post_init__(self) -> None:
         if self.delist_keywords is None:

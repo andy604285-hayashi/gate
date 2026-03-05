@@ -8,9 +8,10 @@ from scanner import Announcement
 
 class MainCoreTests(unittest.TestCase):
     def test_run_once_no_announcements(self) -> None:
-        with patch("main.get_new_announcements", return_value=[]):
+        with patch("main.get_new_announcements", return_value=[]), patch("main.write_heartbeat") as hb_mock:
             out = main.run_once()
         self.assertEqual(out, 0)
+        hb_mock.assert_called_once_with(status="idle", processed=0)
 
     def test_run_once_processes_and_saves_each_id(self) -> None:
         anns = [
@@ -23,11 +24,13 @@ class MainCoreTests(unittest.TestCase):
             patch("main.match_coins", return_value=["ABC"]), \
             patch("main.build_alert_message", return_value="msg"), \
             patch("main.send_telegram_message", return_value=True), \
-            patch("main.save_processed_ids") as save_mock:
+            patch("main.save_processed_ids") as save_mock, \
+            patch("main.write_heartbeat") as hb_mock:
             out = main.run_once()
 
         self.assertEqual(out, 2)
         self.assertEqual(save_mock.call_count, 2)
+        hb_mock.assert_called_once_with(status="ok", processed=2)
 
     def test_run_once_dry_run_skips_send_and_history(self) -> None:
         anns = [Announcement(id="1", title="t1", url="u1", date="")]
@@ -37,12 +40,14 @@ class MainCoreTests(unittest.TestCase):
             patch("main.match_coins", return_value=["ABC"]), \
             patch("main.build_alert_message", return_value="msg"), \
             patch("main.send_telegram_message") as send_mock, \
-            patch("main.save_processed_ids") as save_mock:
+            patch("main.save_processed_ids") as save_mock, \
+            patch("main.write_heartbeat") as hb_mock:
             out = main.run_once(dry_run=True)
 
         self.assertEqual(out, 1)
         send_mock.assert_not_called()
         save_mock.assert_not_called()
+        hb_mock.assert_called_once_with(status="ok", processed=1)
 
     def test_run_once_continues_when_one_announcement_fails(self) -> None:
         anns = [
@@ -61,11 +66,13 @@ class MainCoreTests(unittest.TestCase):
             patch("main.match_coins", return_value=["ABC"]), \
             patch("main.build_alert_message", return_value="msg"), \
             patch("main.send_telegram_message", return_value=True), \
-            patch("main.save_processed_ids") as save_mock:
+            patch("main.save_processed_ids") as save_mock, \
+            patch("main.write_heartbeat") as hb_mock:
             out = main.run_once()
 
         self.assertEqual(out, 1)
         save_mock.assert_called_once_with(["2"])
+        hb_mock.assert_called_once_with(status="ok", processed=1)
 
     def test_arg_parser_supports_preflight(self) -> None:
         args = main.build_arg_parser().parse_args(["--preflight"])
@@ -117,6 +124,15 @@ class MainCoreTests(unittest.TestCase):
         status_mock.assert_called_once_with(json_output=False)
         run_loop_mock.assert_not_called()
         run_once_mock.assert_not_called()
+
+    def test_run_loop_writes_error_heartbeat_on_exception(self) -> None:
+        with patch("main.run_once", side_effect=RuntimeError("loop boom")), \
+            patch("main.time.sleep"), \
+            patch("main.write_heartbeat") as hb_mock:
+            main.run_loop(max_cycles=1)
+
+        hb_mock.assert_called_once()
+        self.assertEqual(hb_mock.call_args.kwargs["status"], "error")
 
 
 if __name__ == "__main__":
