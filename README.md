@@ -75,7 +75,7 @@
 
 - 运行状态概览：`python main.py --status`
 
-- JSON 状态概览：`python main.py --status --status-json`
+- JSON 状态概览：`python main.py --status --status-json`（包含 `heartbeat_file` 字段，便于外部探针读取路径）
 
 - 全链路演练（不发通知、不写历史）：`python main.py --once --dry-run`
 

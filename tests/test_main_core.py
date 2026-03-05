@@ -103,6 +103,11 @@ class MainCoreTests(unittest.TestCase):
         save_mock.assert_called_once_with(["2"])
         hb_mock.assert_called_once_with(status="ok", processed=1)
 
+
+    def test_status_payload_contains_heartbeat_file_key(self) -> None:
+        payload = main._status_payload()
+        self.assertIn("heartbeat_file", payload)
+
     def test_arg_parser_supports_preflight(self) -> None:
         args = main.build_arg_parser().parse_args(["--preflight"])
         self.assertTrue(args.preflight)

@@ -36,6 +36,7 @@ def _status_payload() -> dict:
         "gate_api_configured": bool(SETTINGS.gate_api_key and SETTINGS.gate_api_secret),
         "telegram_configured": bool(SETTINGS.telegram_bot_token and SETTINGS.telegram_chat_id),
         "heartbeat_configured": bool(SETTINGS.heartbeat_file),
+        "heartbeat_file": SETTINGS.heartbeat_file,
     }
 
 
