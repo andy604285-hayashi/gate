@@ -94,10 +94,16 @@ def run_preflight(json_output: bool = False) -> int:
         "environment_hints": "Environment hints",
     }
 
+    hard_fail_sections = {"required_files", "writable_paths"}
     for section in ["required_files", "writable_paths", "environment_hints"]:
         print(f"\n[{title_map[section]}]")
         for item in report["groups"][section]:
-            mark = "OK" if item["ok"] else "WARN"
+            if item["ok"]:
+                mark = "OK"
+            elif section in hard_fail_sections:
+                mark = "FAIL"
+            else:
+                mark = "WARN"
             print(f"- {mark:4} {item['key']}: {item['message']}")
 
     print(f"\nPreflight result: {report['status']}")

@@ -2,6 +2,7 @@ import json
 import os
 import tempfile
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 
 from config import SETTINGS
@@ -88,6 +89,29 @@ class PreflightCheckTests(unittest.TestCase):
 
             self.assertTrue(any(key == str(history) and ok for key, ok, _ in rows))
             self.assertEqual(history.read_text(encoding="utf-8"), '["already"]')
+
+
+    def test_run_preflight_text_output_marks_hard_fail_as_fail(self) -> None:
+        from io import StringIO
+        import contextlib
+
+        fake_report = {
+            "status": "FAIL",
+            "groups": {
+                "required_files": [{"key": "history.json", "ok": False, "message": "missing"}],
+                "writable_paths": [{"key": "history.json", "ok": True, "message": "writable"}],
+                "environment_hints": [{"key": "telegram", "ok": False, "message": "not configured"}],
+            },
+        }
+        buf = StringIO()
+        with patch("tools.preflight_check.collect_preflight_report", return_value=fake_report):
+            with contextlib.redirect_stdout(buf):
+                code = preflight_check.run_preflight(json_output=False)
+
+        out = buf.getvalue()
+        self.assertEqual(code, 1)
+        self.assertIn("- FAIL history.json: missing", out)
+        self.assertIn("- WARN telegram: not configured", out)
 
     def test_run_preflight_json_output(self) -> None:
         from io import StringIO
