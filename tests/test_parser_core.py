@@ -1,6 +1,8 @@
 import unittest
+from unittest.mock import patch
 
-from parser import extract_symbols_from_text
+from parser import extract_symbols_from_text, parse_delist_coins
+from scanner import Announcement
 
 
 class ParserCoreTests(unittest.TestCase):
@@ -24,6 +26,19 @@ class ParserCoreTests(unittest.TestCase):
         self.assertIn("MEME1", out)
         self.assertIn("ABC2", out)
         self.assertIn("DEF", out)
+
+    def test_parse_delist_coins_falls_back_to_title_when_detail_fetch_fails(self) -> None:
+        ann = Announcement(
+            id="1",
+            title="About delist ABC/USDT",
+            url="https://example.invalid/ann/1",
+            date="",
+        )
+        with patch("parser._fetch_announcement_text", side_effect=RuntimeError("network boom")):
+            out = parse_delist_coins(ann)
+
+        self.assertIn("ABC", out)
+
 
 
 if __name__ == "__main__":

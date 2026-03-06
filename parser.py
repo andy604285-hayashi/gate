@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+import logging
 import re
 from typing import Iterable, List, Set
 
 from scanner import Announcement
+
+logger = logging.getLogger(__name__)
 
 PAIR_RE = re.compile(r"\b([A-Z0-9]{2,15})\s*[/_]\s*(USDT|USD|BTC|ETH)\b")
 TOKEN_RE = re.compile(r"\b([A-Z][A-Z0-9]{1,14})\b")
@@ -79,6 +82,11 @@ def _fetch_announcement_text(url: str) -> str:
 def parse_delist_coins(announcement: Announcement) -> List[str]:
     """Extract possible delisted token symbols from title + detail page text."""
     symbols = set(extract_symbols_from_text(announcement.title))
-    detail_text = _fetch_announcement_text(announcement.url)
+    try:
+        detail_text = _fetch_announcement_text(announcement.url)
+    except Exception as exc:
+        logger.warning("Failed to fetch announcement detail %s: %s", announcement.url, exc)
+        return sorted(symbols)
+
     symbols.update(extract_symbols_from_text(detail_text))
     return sorted(symbols)
