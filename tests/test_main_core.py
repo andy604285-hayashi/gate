@@ -168,6 +168,16 @@ class MainCoreTests(unittest.TestCase):
         run_loop_mock.assert_not_called()
         run_once_mock.assert_not_called()
 
+    def test_run_loop_zero_cycles_is_unbounded_until_stopped(self) -> None:
+        with (
+            patch("main.run_once", side_effect=[0, KeyboardInterrupt()]) as run_once_mock,
+            patch("main.time.sleep"),
+        ):
+            with self.assertRaises(KeyboardInterrupt):
+                main.run_loop(max_cycles=0)
+
+        self.assertEqual(run_once_mock.call_count, 2)
+
     def test_run_loop_writes_error_heartbeat_on_exception(self) -> None:
         with patch("main.run_once", side_effect=RuntimeError("loop boom")), \
             patch("main.time.sleep"), \

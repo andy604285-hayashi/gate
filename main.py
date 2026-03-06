@@ -122,6 +122,9 @@ def run_once(dry_run: bool = False) -> int:
 
 
 def run_loop(max_cycles: int | None = None, dry_run: bool = False) -> None:
+    if max_cycles is not None and max_cycles <= 0:
+        max_cycles = None
+
     logger.info("Gate.io 下架监控已启动 (interval=%ss dry_run=%s)", SETTINGS.poll_interval_seconds, dry_run)
     cycles = 0
     while True:
