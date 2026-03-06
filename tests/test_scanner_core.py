@@ -3,7 +3,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from scanner import Announcement, _dedupe, _extract_announcement_id, _is_delist_title, save_processed_ids
+from scanner import Announcement, _dedupe, _extract_announcement_id, _is_delist_title, _load_history, save_processed_ids
 
 
 class ScannerCoreTests(unittest.TestCase):
@@ -22,6 +22,16 @@ class ScannerCoreTests(unittest.TestCase):
         self.assertTrue(value)
 
 
+
+
+    def test_load_history_normalizes_non_string_ids(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            history_path = Path(tmp) / "history.json"
+            history_path.write_text('[123, "  abc  ", "", null]', encoding="utf-8")
+
+            out = _load_history(str(history_path))
+
+            self.assertEqual(out, {"123", "abc"})
 
     def test_save_processed_ids_creates_parent_directory(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

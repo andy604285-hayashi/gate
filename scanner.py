@@ -30,9 +30,20 @@ def _load_history(path: str) -> set[str]:
         return set()
     try:
         data = json.loads(file.read_text(encoding="utf-8"))
-        return set(data if isinstance(data, list) else [])
     except json.JSONDecodeError:
         return set()
+
+    if not isinstance(data, list):
+        return set()
+
+    normalized: set[str] = set()
+    for item in data:
+        if item is None:
+            continue
+        text = str(item).strip()
+        if text:
+            normalized.add(text)
+    return normalized
 
 
 def save_processed_ids(ids: Iterable[str], path: str | None = None) -> None:
