@@ -23,6 +23,19 @@ class MatcherCoreTests(unittest.TestCase):
             finally:
                 object.__setattr__(SETTINGS, "watchlist_file", old_watchlist)
 
+
+    def test_load_watchlist_skips_none_and_blank_values(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            watchlist_path = Path(tmp) / "watchlist.json"
+            watchlist_path.write_text(json.dumps([None, "", " btc ", "ETH"]), encoding="utf-8")
+
+            old_watchlist = SETTINGS.watchlist_file
+            try:
+                object.__setattr__(SETTINGS, "watchlist_file", str(watchlist_path))
+                self.assertEqual(matcher._load_watchlist(), ["BTC", "ETH"])
+            finally:
+                object.__setattr__(SETTINGS, "watchlist_file", old_watchlist)
+
     def test_load_watchlist_invalid_json_returns_empty(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             watchlist_path = Path(tmp) / "watchlist.json"

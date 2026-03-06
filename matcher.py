@@ -92,7 +92,15 @@ def _load_watchlist() -> List[str]:
         return []
 
     if isinstance(content, list):
-        tokens = sorted({str(c).upper() for c in content if str(c).strip()})
+        normalized: set[str] = set()
+        for item in content:
+            if item is None:
+                continue
+            token = str(item).strip().upper()
+            if token:
+                normalized.add(token)
+
+        tokens = sorted(normalized)
         logger.info("Loaded %d symbols from watchlist", len(tokens))
         return tokens
 
