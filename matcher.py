@@ -125,6 +125,8 @@ def get_my_coins() -> List[str]:
 def _normalize_symbols(values: List[str]) -> set[str]:
     out: set[str] = set()
     for value in values:
+        if value is None:
+            continue
         text = str(value).strip().upper()
         if text:
             out.add(text)

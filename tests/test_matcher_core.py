@@ -43,6 +43,10 @@ class MatcherCoreTests(unittest.TestCase):
         out = matcher.match_coins(["  btc  ", "", "   "], ["BTC", "ETH", None])
         self.assertEqual(out, ["BTC"])
 
+    def test_match_coins_skips_none_in_both_inputs(self) -> None:
+        out = matcher.match_coins([None, "btc"], ["BTC", None])
+        self.assertEqual(out, ["BTC"])
+
 
 if __name__ == "__main__":
     unittest.main()
