@@ -25,6 +25,8 @@ class MainCoreTests(unittest.TestCase):
             payload = json.loads(heartbeat_file.read_text(encoding="utf-8"))
             self.assertEqual(payload["status"], "ok")
             self.assertEqual(payload["processed"], 3)
+            self.assertIn("candidates", payload)
+            self.assertIn("duration_seconds", payload)
 
     def test_write_heartbeat_logs_warning_on_write_failure(self) -> None:
         old_heartbeat = main.SETTINGS.heartbeat_file
@@ -40,7 +42,11 @@ class MainCoreTests(unittest.TestCase):
         with patch("main.get_new_announcements", return_value=[]), patch("main.write_heartbeat") as hb_mock:
             out = main.run_once()
         self.assertEqual(out, 0)
-        hb_mock.assert_called_once_with(status="idle", processed=0)
+        hb_mock.assert_called_once()
+        self.assertEqual(hb_mock.call_args.kwargs["status"], "idle")
+        self.assertEqual(hb_mock.call_args.kwargs["processed"], 0)
+        self.assertEqual(hb_mock.call_args.kwargs["candidates"], 0)
+        self.assertGreaterEqual(hb_mock.call_args.kwargs["duration_seconds"], 0)
 
     def test_run_once_processes_and_saves_each_id(self) -> None:
         anns = [
@@ -59,7 +65,11 @@ class MainCoreTests(unittest.TestCase):
 
         self.assertEqual(out, 2)
         self.assertEqual(save_mock.call_count, 2)
-        hb_mock.assert_called_once_with(status="ok", processed=2)
+        hb_mock.assert_called_once()
+        self.assertEqual(hb_mock.call_args.kwargs["status"], "ok")
+        self.assertEqual(hb_mock.call_args.kwargs["processed"], 2)
+        self.assertEqual(hb_mock.call_args.kwargs["candidates"], 2)
+        self.assertGreaterEqual(hb_mock.call_args.kwargs["duration_seconds"], 0)
 
     def test_run_once_dry_run_skips_send_and_history(self) -> None:
         anns = [Announcement(id="1", title="t1", url="u1", date="")]
@@ -76,7 +86,11 @@ class MainCoreTests(unittest.TestCase):
         self.assertEqual(out, 1)
         send_mock.assert_not_called()
         save_mock.assert_not_called()
-        hb_mock.assert_called_once_with(status="ok", processed=1)
+        hb_mock.assert_called_once()
+        self.assertEqual(hb_mock.call_args.kwargs["status"], "ok")
+        self.assertEqual(hb_mock.call_args.kwargs["processed"], 1)
+        self.assertEqual(hb_mock.call_args.kwargs["candidates"], 1)
+        self.assertGreaterEqual(hb_mock.call_args.kwargs["duration_seconds"], 0)
 
     def test_run_once_continues_when_one_announcement_fails(self) -> None:
         anns = [
@@ -101,7 +115,11 @@ class MainCoreTests(unittest.TestCase):
 
         self.assertEqual(out, 1)
         save_mock.assert_called_once_with(["2"])
-        hb_mock.assert_called_once_with(status="ok", processed=1)
+        hb_mock.assert_called_once()
+        self.assertEqual(hb_mock.call_args.kwargs["status"], "ok")
+        self.assertEqual(hb_mock.call_args.kwargs["processed"], 1)
+        self.assertEqual(hb_mock.call_args.kwargs["candidates"], 2)
+        self.assertGreaterEqual(hb_mock.call_args.kwargs["duration_seconds"], 0)
 
 
     def test_status_payload_contains_heartbeat_file_key(self) -> None:

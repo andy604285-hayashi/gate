@@ -54,7 +54,13 @@ def print_status(json_output: bool = False) -> None:
 
 
 
-def write_heartbeat(status: str, processed: int = 0, error: str = "") -> None:
+def write_heartbeat(
+    status: str,
+    processed: int = 0,
+    error: str = "",
+    candidates: int = 0,
+    duration_seconds: float = 0.0,
+) -> None:
     """Write optional heartbeat JSON for external liveness checks."""
     if not SETTINGS.heartbeat_file:
         return
@@ -63,6 +69,8 @@ def write_heartbeat(status: str, processed: int = 0, error: str = "") -> None:
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "status": status,
         "processed": processed,
+        "candidates": candidates,
+        "duration_seconds": round(float(duration_seconds), 6),
         "error": error,
     }
     heartbeat_path = Path(SETTINGS.heartbeat_file)
@@ -78,10 +86,11 @@ def run_once(dry_run: bool = False) -> int:
 
     Returns the number of newly processed announcements.
     """
+    cycle_start = time.perf_counter()
     announcements = get_new_announcements()
     if not announcements:
         logger.info("No new delist announcements")
-        write_heartbeat(status="idle", processed=0)
+        write_heartbeat(status="idle", processed=0, candidates=0, duration_seconds=time.perf_counter() - cycle_start)
         return 0
 
     my_coins = get_my_coins()
@@ -117,7 +126,12 @@ def run_once(dry_run: bool = False) -> int:
         len(announcements),
         dry_run,
     )
-    write_heartbeat(status="ok", processed=processed_count)
+    write_heartbeat(
+        status="ok",
+        processed=processed_count,
+        candidates=len(announcements),
+        duration_seconds=time.perf_counter() - cycle_start,
+    )
     return processed_count
 
 
