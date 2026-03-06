@@ -122,5 +122,14 @@ def get_my_coins() -> List[str]:
     return merged
 
 
+def _normalize_symbols(values: List[str]) -> set[str]:
+    out: set[str] = set()
+    for value in values:
+        text = str(value).strip().upper()
+        if text:
+            out.add(text)
+    return out
+
+
 def match_coins(delist_coins: List[str], my_coins: List[str]) -> List[str]:
-    return sorted(set(c.upper() for c in delist_coins) & set(c.upper() for c in my_coins))
+    return sorted(_normalize_symbols(delist_coins) & _normalize_symbols(my_coins))

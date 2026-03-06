@@ -39,6 +39,10 @@ class MatcherCoreTests(unittest.TestCase):
         out = matcher.match_coins(["abc", "BTC", "XRP"], ["ABC", "ETH", "XRP"])
         self.assertEqual(out, ["ABC", "XRP"])
 
+    def test_match_coins_ignores_blank_and_whitespace_tokens(self) -> None:
+        out = matcher.match_coins(["  btc  ", "", "   "], ["BTC", "ETH", None])
+        self.assertEqual(out, ["BTC"])
+
 
 if __name__ == "__main__":
     unittest.main()
