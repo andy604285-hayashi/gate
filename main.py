@@ -255,6 +255,7 @@ def main() -> None:
                     {
                         "processed": processed,
                         "dry_run": bool(args.dry_run),
+                        "status": "ok" if processed > 0 else "idle",
                         "timestamp": datetime.now(timezone.utc).isoformat(),
                     },
                     ensure_ascii=False,

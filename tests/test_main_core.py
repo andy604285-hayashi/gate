@@ -267,7 +267,33 @@ class MainCoreTests(unittest.TestCase):
         payload = json.loads(print_mock.call_args.args[0])
         self.assertEqual(payload["processed"], 2)
         self.assertTrue(payload["dry_run"])
+        self.assertEqual(payload["status"], "ok")
         self.assertIn("timestamp", payload)
+
+    def test_main_once_json_reports_idle_status_when_nothing_processed(self) -> None:
+        ns = Namespace(
+            once=True,
+            log_level="INFO",
+            preflight=False,
+            preflight_json=False,
+            status=False,
+            status_json=False,
+            dry_run=False,
+            once_json=True,
+            max_cycles=0,
+        )
+        with (
+            patch("main.build_arg_parser") as parser_mock,
+            patch("main.setup_logging"),
+            patch("main.run_once", return_value=0),
+            patch("builtins.print") as print_mock,
+        ):
+            parser_mock.return_value.parse_args.return_value = ns
+            main.main()
+
+        payload = json.loads(print_mock.call_args.args[0])
+        self.assertEqual(payload["status"], "idle")
+        self.assertEqual(payload["processed"], 0)
 
     def test_main_warns_once_json_without_once(self) -> None:
         ns = Namespace(
