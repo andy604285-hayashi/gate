@@ -50,6 +50,17 @@ class ScannerCoreTests(unittest.TestCase):
 
             self.assertEqual(out, {"123", "abc"})
 
+
+    def test_save_processed_ids_uses_atomic_replace(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            history_path = Path(tmp) / "history.json"
+            save_processed_ids(["x"], path=str(history_path))
+
+            self.assertTrue(history_path.exists())
+            self.assertFalse((Path(tmp) / "history.json.tmp").exists())
+            payload = json.loads(history_path.read_text(encoding="utf-8"))
+            self.assertEqual(payload, ["x"])
+
     def test_save_processed_ids_creates_parent_directory(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             history_path = Path(tmp) / "nested" / "history.json"

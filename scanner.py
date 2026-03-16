@@ -62,10 +62,10 @@ def save_processed_ids(ids: Iterable[str], path: str | None = None) -> None:
     existing = _load_history(history_path)
     existing.update(ids)
     history_file.parent.mkdir(parents=True, exist_ok=True)
-    history_file.write_text(
-        json.dumps(sorted(existing), ensure_ascii=False, indent=2),
-        encoding="utf-8",
-    )
+    payload = json.dumps(sorted(existing), ensure_ascii=False, indent=2)
+    tmp_file = history_file.with_suffix(history_file.suffix + ".tmp")
+    tmp_file.write_text(payload, encoding="utf-8")
+    tmp_file.replace(history_file)
 
 
 def _is_delist_title(title: str) -> bool:
