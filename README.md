@@ -79,7 +79,7 @@
 
 - 全链路演练（不发通知、不写历史）：`python main.py --once --dry-run`
 
-- 单轮 JSON 结果：`python main.py --once --once-json`（包含 `processed`、`dry_run`、`status`、`timestamp` 字段）
+- 单轮 JSON 结果：`python main.py --once --once-json`（包含 `processed`、`dry_run`、`status`、`timestamp`；异常时含 `error` 并返回非零退出码）
 
 - 心跳文件示例：`HEARTBEAT_FILE=heartbeat.json`（每轮更新状态）。
 

@@ -248,7 +248,25 @@ def main() -> None:
         return
 
     if args.once:
-        processed = run_once(dry_run=args.dry_run)
+        try:
+            processed = run_once(dry_run=args.dry_run)
+        except Exception as exc:
+            logger.exception("ONCE MODE ERROR: %s", exc)
+            if args.once_json:
+                print(
+                    json.dumps(
+                        {
+                            "processed": 0,
+                            "dry_run": bool(args.dry_run),
+                            "status": "error",
+                            "error": str(exc),
+                            "timestamp": datetime.now(timezone.utc).isoformat(),
+                        },
+                        ensure_ascii=False,
+                    )
+                )
+            raise SystemExit(1)
+
         if args.once_json:
             print(
                 json.dumps(
