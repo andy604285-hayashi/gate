@@ -26,6 +26,13 @@ class ScannerCoreTests(unittest.TestCase):
 
 
 
+
+    def test_load_history_empty_file_returns_empty_set(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            history_path = Path(tmp) / "history.json"
+            history_path.write_text("", encoding="utf-8")
+            self.assertEqual(_load_history(str(history_path)), set())
+
     def test_load_history_handles_oserror(self) -> None:
         with (
             patch("scanner.Path.exists", return_value=True),

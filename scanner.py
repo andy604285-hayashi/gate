@@ -29,9 +29,18 @@ def _load_history(path: str) -> set[str]:
     if not file.exists():
         return set()
     try:
-        data = json.loads(file.read_text(encoding="utf-8"))
-    except (json.JSONDecodeError, OSError) as exc:
-        logger.warning("Failed to load history file %s: %s", path, exc)
+        raw = file.read_text(encoding="utf-8")
+    except OSError as exc:
+        logger.warning("Failed to read history file %s: %s", path, exc)
+        return set()
+
+    if not raw.strip():
+        return set()
+
+    try:
+        data = json.loads(raw)
+    except json.JSONDecodeError as exc:
+        logger.warning("Failed to parse history file %s: %s", path, exc)
         return set()
 
     if not isinstance(data, list):
