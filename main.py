@@ -146,7 +146,7 @@ def run_loop(max_cycles: int | None = None, dry_run: bool = False) -> None:
             run_once(dry_run=dry_run)
         except Exception as exc:  # broad guard for long-running monitor
             logger.exception("TOP-LEVEL LOOP ERROR: %s", exc)
-            write_heartbeat(status="error", processed=0, error=str(exc))
+            write_heartbeat(status="error", processed=0, candidates=0, duration_seconds=0.0, error=str(exc))
 
         cycles += 1
         if max_cycles is not None and cycles >= max_cycles:
