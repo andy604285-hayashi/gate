@@ -92,6 +92,19 @@ class MainCoreTests(unittest.TestCase):
         self.assertEqual(hb_mock.call_args.kwargs["candidates"], 1)
         self.assertGreaterEqual(hb_mock.call_args.kwargs["duration_seconds"], 0)
 
+    def test_run_once_falls_back_when_get_my_coins_fails(self) -> None:
+        anns = [Announcement(id="1", title="t1", url="u1", date="")]
+        with patch("main.get_new_announcements", return_value=anns),             patch("main.get_my_coins", side_effect=RuntimeError("portfolio boom")),             patch("main.parse_delist_coins", return_value=["ABC"]),             patch("main.match_coins", return_value=[]),             patch("main.build_alert_message", return_value="msg"),             patch("main.send_telegram_message", return_value=True),             patch("main.save_processed_ids") as save_mock,             patch("main.logger.warning") as warn_mock,             patch("main.write_heartbeat") as hb_mock:
+            out = main.run_once()
+
+        self.assertEqual(out, 1)
+        save_mock.assert_called_once_with(["1"])
+        self.assertTrue(any("Failed to load portfolio symbols" in str(c) for c in warn_mock.call_args_list))
+        hb_mock.assert_called_once()
+        self.assertEqual(hb_mock.call_args.kwargs["status"], "ok")
+        self.assertEqual(hb_mock.call_args.kwargs["processed"], 1)
+        self.assertEqual(hb_mock.call_args.kwargs["candidates"], 1)
+
     def test_run_once_continues_when_one_announcement_fails(self) -> None:
         anns = [
             Announcement(id="1", title="bad", url="u1", date=""),

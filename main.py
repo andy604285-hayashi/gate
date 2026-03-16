@@ -93,7 +93,12 @@ def run_once(dry_run: bool = False) -> int:
         write_heartbeat(status="idle", processed=0, candidates=0, duration_seconds=time.perf_counter() - cycle_start)
         return 0
 
-    my_coins = get_my_coins()
+    try:
+        my_coins = get_my_coins()
+    except Exception as exc:
+        logger.warning("Failed to load portfolio symbols, fallback to empty set: %s", exc)
+        my_coins = []
+
     processed_count = 0
 
     for ann in announcements:
