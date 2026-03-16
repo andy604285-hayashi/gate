@@ -147,11 +147,18 @@ def run_loop(max_cycles: int | None = None, dry_run: bool = False) -> None:
     logger.info("Gate.io 下架监控已启动 (interval=%ss dry_run=%s)", SETTINGS.poll_interval_seconds, dry_run)
     cycles = 0
     while True:
+        loop_start = time.perf_counter()
         try:
             run_once(dry_run=dry_run)
         except Exception as exc:  # broad guard for long-running monitor
             logger.exception("TOP-LEVEL LOOP ERROR: %s", exc)
-            write_heartbeat(status="error", processed=0, candidates=0, duration_seconds=0.0, error=str(exc))
+            write_heartbeat(
+                status="error",
+                processed=0,
+                candidates=0,
+                duration_seconds=time.perf_counter() - loop_start,
+                error=str(exc),
+            )
 
         cycles += 1
         if max_cycles is not None and cycles >= max_cycles:

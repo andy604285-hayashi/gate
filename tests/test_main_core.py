@@ -219,7 +219,7 @@ class MainCoreTests(unittest.TestCase):
         self.assertEqual(hb_mock.call_args.kwargs["status"], "error")
         self.assertEqual(hb_mock.call_args.kwargs["processed"], 0)
         self.assertEqual(hb_mock.call_args.kwargs["candidates"], 0)
-        self.assertEqual(hb_mock.call_args.kwargs["duration_seconds"], 0.0)
+        self.assertGreater(hb_mock.call_args.kwargs["duration_seconds"], 0)
 
     def test_main_forwards_max_cycles_to_run_loop(self) -> None:
         ns = Namespace(
