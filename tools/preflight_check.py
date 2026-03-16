@@ -44,6 +44,27 @@ def check_writable_paths() -> List[Tuple[str, bool, str]]:
     return results
 
 
+
+
+def check_data_integrity() -> List[Tuple[str, bool, str]]:
+    checks = []
+    for name in [SETTINGS.watchlist_file, SETTINGS.history_file]:
+        p = Path(name)
+        if not p.exists():
+            checks.append((name, False, "missing (integrity check skipped)"))
+            continue
+        try:
+            payload = json.loads(p.read_text(encoding="utf-8"))
+        except Exception as exc:
+            checks.append((name, False, f"invalid json: {exc}"))
+            continue
+
+        if isinstance(payload, list):
+            checks.append((name, True, "valid list json"))
+        else:
+            checks.append((name, False, "json root should be a list"))
+    return checks
+
 def check_env_hints() -> List[Tuple[str, bool, str]]:
     checks = []
     tg_ok = bool(os.getenv("TG_BOT_TOKEN")) and bool(os.getenv("TG_CHAT_ID"))
@@ -60,6 +81,7 @@ def collect_preflight_report() -> dict:
     groups = {
         "required_files": check_required_files(),
         "writable_paths": check_writable_paths(),
+        "data_integrity": check_data_integrity(),
         "environment_hints": check_env_hints(),
     }
 
@@ -91,11 +113,12 @@ def run_preflight(json_output: bool = False) -> int:
     title_map = {
         "required_files": "Required files",
         "writable_paths": "Writable paths",
+        "data_integrity": "Data integrity",
         "environment_hints": "Environment hints",
     }
 
     hard_fail_sections = {"required_files", "writable_paths"}
-    for section in ["required_files", "writable_paths", "environment_hints"]:
+    for section in ["required_files", "writable_paths", "data_integrity", "environment_hints"]:
         print(f"\n[{title_map[section]}]")
         for item in report["groups"][section]:
             if item["ok"]:

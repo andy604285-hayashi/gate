@@ -44,11 +44,33 @@ class PreflightCheckTests(unittest.TestCase):
                 else:
                     os.environ[k] = v
 
+
+    def test_check_data_integrity_detects_invalid_json(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            watch = Path(tmp) / "watchlist.json"
+            hist = Path(tmp) / "history.json"
+            watch.write_text('{"oops": 1}', encoding="utf-8")
+            hist.write_text('["ok"]', encoding="utf-8")
+
+            old_watch, old_hist = SETTINGS.watchlist_file, SETTINGS.history_file
+            try:
+                object.__setattr__(SETTINGS, "watchlist_file", str(watch))
+                object.__setattr__(SETTINGS, "history_file", str(hist))
+                rows = preflight_check.check_data_integrity()
+            finally:
+                object.__setattr__(SETTINGS, "watchlist_file", old_watch)
+                object.__setattr__(SETTINGS, "history_file", old_hist)
+
+            row_map = {key: (ok, msg) for key, ok, msg in rows}
+            self.assertFalse(row_map[str(watch)][0])
+            self.assertTrue(row_map[str(hist)][0])
+
     def test_collect_preflight_report_shape(self) -> None:
         report = preflight_check.collect_preflight_report()
         self.assertIn("status", report)
         self.assertIn("groups", report)
         self.assertIn("required_files", report["groups"])
+        self.assertIn("data_integrity", report["groups"])
 
     def test_check_writable_paths_includes_heartbeat_when_configured(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -100,6 +122,7 @@ class PreflightCheckTests(unittest.TestCase):
             "groups": {
                 "required_files": [{"key": "history.json", "ok": False, "message": "missing"}],
                 "writable_paths": [{"key": "history.json", "ok": True, "message": "writable"}],
+                "data_integrity": [{"key": "history.json", "ok": True, "message": "valid list json"}],
                 "environment_hints": [{"key": "telegram", "ok": False, "message": "not configured"}],
             },
         }
