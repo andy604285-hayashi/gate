@@ -252,6 +252,7 @@ def main() -> None:
             processed = run_once(dry_run=args.dry_run)
         except Exception as exc:
             logger.exception("ONCE MODE ERROR: %s", exc)
+            write_heartbeat(status="error", processed=0, candidates=0, duration_seconds=0.0, error=str(exc))
             if args.once_json:
                 print(
                     json.dumps(

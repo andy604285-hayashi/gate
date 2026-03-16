@@ -94,7 +94,17 @@ class MainCoreTests(unittest.TestCase):
 
     def test_run_once_falls_back_when_get_my_coins_fails(self) -> None:
         anns = [Announcement(id="1", title="t1", url="u1", date="")]
-        with patch("main.get_new_announcements", return_value=anns),             patch("main.get_my_coins", side_effect=RuntimeError("portfolio boom")),             patch("main.parse_delist_coins", return_value=["ABC"]),             patch("main.match_coins", return_value=[]),             patch("main.build_alert_message", return_value="msg"),             patch("main.send_telegram_message", return_value=True),             patch("main.save_processed_ids") as save_mock,             patch("main.logger.warning") as warn_mock,             patch("main.write_heartbeat") as hb_mock:
+        with (
+            patch("main.get_new_announcements", return_value=anns),
+            patch("main.get_my_coins", side_effect=RuntimeError("portfolio boom")),
+            patch("main.parse_delist_coins", return_value=["ABC"]),
+            patch("main.match_coins", return_value=[]),
+            patch("main.build_alert_message", return_value="msg"),
+            patch("main.send_telegram_message", return_value=True),
+            patch("main.save_processed_ids") as save_mock,
+            patch("main.logger.warning") as warn_mock,
+            patch("main.write_heartbeat") as hb_mock,
+        ):
             out = main.run_once()
 
         self.assertEqual(out, 1)
@@ -286,6 +296,7 @@ class MainCoreTests(unittest.TestCase):
             patch("main.build_arg_parser") as parser_mock,
             patch("main.setup_logging"),
             patch("main.run_once", side_effect=RuntimeError("once boom")),
+            patch("main.write_heartbeat") as hb_mock,
             patch("builtins.print") as print_mock,
         ):
             parser_mock.return_value.parse_args.return_value = ns
@@ -293,10 +304,37 @@ class MainCoreTests(unittest.TestCase):
                 main.main()
 
         self.assertEqual(cm.exception.code, 1)
+        hb_mock.assert_called_once()
+        self.assertEqual(hb_mock.call_args.kwargs["status"], "error")
         payload = json.loads(print_mock.call_args.args[0])
         self.assertEqual(payload["status"], "error")
         self.assertEqual(payload["processed"], 0)
         self.assertEqual(payload["error"], "once boom")
+
+    def test_main_once_error_without_json_exits_nonzero(self) -> None:
+        ns = Namespace(
+            once=True,
+            log_level="INFO",
+            preflight=False,
+            preflight_json=False,
+            status=False,
+            status_json=False,
+            dry_run=False,
+            once_json=False,
+            max_cycles=0,
+        )
+        with (
+            patch("main.build_arg_parser") as parser_mock,
+            patch("main.setup_logging"),
+            patch("main.run_once", side_effect=RuntimeError("once boom")),
+            patch("main.write_heartbeat") as hb_mock,
+        ):
+            parser_mock.return_value.parse_args.return_value = ns
+            with self.assertRaises(SystemExit) as cm:
+                main.main()
+
+        self.assertEqual(cm.exception.code, 1)
+        hb_mock.assert_called_once()
 
     def test_main_once_json_reports_idle_status_when_nothing_processed(self) -> None:
         ns = Namespace(
