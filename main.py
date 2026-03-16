@@ -250,7 +250,16 @@ def main() -> None:
     if args.once:
         processed = run_once(dry_run=args.dry_run)
         if args.once_json:
-            print(json.dumps({"processed": processed, "dry_run": bool(args.dry_run)}, ensure_ascii=False))
+            print(
+                json.dumps(
+                    {
+                        "processed": processed,
+                        "dry_run": bool(args.dry_run),
+                        "timestamp": datetime.now(timezone.utc).isoformat(),
+                    },
+                    ensure_ascii=False,
+                )
+            )
         return
 
     if args.once_json:
